@@ -1,0 +1,6 @@
+geckodriver
+geckodriver-v0.31.0-linux64.tar.gz
+geckodriver.log
+**/__pycache__/*
+scraper/working_dir/*
+venv/*
