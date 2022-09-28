@@ -15,3 +15,10 @@ Code was written on XUbuntu 20.04 with python 3.9.5. Firefox Version 96.0.
 5. Add geckodriver/executable to your PATH
 `export PATH=$PATH:/path/to/directory/of/executable/downloaded/in/previous/step`
 
+# Run pipeline.
+
+with virtual environment activated, In the top directory run
+
+`python scraper/pipeline.py RunPipeLine --local-scheduler`
+
+This will create on the order of magnitude ~2000 HTML files on the local file system.
