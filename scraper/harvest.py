@@ -20,7 +20,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from clean.clean_web_extractions import (
     clean_range_of_posts_on_page,
     clean_date_of_post,
-)
+    clean_gig_posting,)
 
 
 def save_gig_links(cl_gigs_page_dir: str) -> None:
@@ -104,7 +104,7 @@ def save_gig_links(cl_gigs_page_dir: str) -> None:
             on_last_page = True
 
 
-def extract_links_from_gigs_page(path_to_gig_page_html: str
+def extract_links_from_gigs_page(path_to_gig_page_html: str,
                                  header: bool,
                                  csv_output: str)-> None:
     """
@@ -188,13 +188,15 @@ def extract_gig_post(filename: str,
     except:
         raise # catch-all
 
+
 def analyze_gig_posts():
     """
     """
-    soup = BeautifulSoup(response.content, 'html.parser')
-    section = soup.find('section', {'id':'postingbody'})
-    print(section)
+    gig_postings = pd.read_csv('working_dir/links_to_gig_postings.csv')
+    gig_postings_drop_dupes = gig_postings.copy().drop_duplicates(subset=['title', 'date'])
+    gig_postings_drop_dupes['gig_posting_text'] = gig_postings_drop_dupes['filename'].apply(lambda x: clean_gig_posting(x))
+    print(gig_postings_drop_dupes)
+    gig_postings_drop_dupes.to_csv('final.csv')
 
 if __name__ == "__main__":
-    pass
-    #extract_gig_posts()
+    analyze_gig_posts()

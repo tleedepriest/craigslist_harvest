@@ -1,6 +1,8 @@
 """
 module for cleaning text extracted from HTML
 """
+from bs4 import BeautifulSoup
+from pathlib import Path
 from typing import Tuple
 from datetime import datetime
 from datetime import timezone
@@ -42,3 +44,12 @@ def clean_date_of_post(utc_datestring):
     to_datetime = datetime.fromisoformat(utc_datestring[:-1]).astimezone(timezone.utc)
     return to_datetime.strftime('%Y-%m-%d')
 
+def clean_gig_posting(filename):
+
+    full_path = Path('working_dir') / 'gig_posts' / f'{filename}'
+    with Path(full_path).open('rb') as fh:
+        html_contents = fh.read()
+
+    soup = BeautifulSoup(html_contents, 'html.parser')
+    section = soup.find('section', {'id':'postingbody'})
+    return section.text
