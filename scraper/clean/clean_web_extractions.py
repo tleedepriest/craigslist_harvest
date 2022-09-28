@@ -2,6 +2,8 @@
 module for cleaning text extracted from HTML
 """
 from typing import Tuple
+from datetime import datetime
+from datetime import timezone
 
 def clean_range_of_posts_on_page(
     range_of_posts_on_page: str) -> Tuple[int, int, int]:
@@ -34,4 +36,9 @@ def clean_range_of_posts_on_page(
     end_num_post_on_page = int(range_split_again[0])
     num_post = int(range_split_again[1])
     return begin_num_post_on_page, end_num_post_on_page, num_post
+
+def clean_date_of_post(utc_datestring):
+    "2022-09-27T15:11:18.000Z"
+    to_datetime = datetime.fromisoformat(utc_datestring[:-1]).astimezone(timezone.utc)
+    return to_datetime.strftime('%Y-%m-%d')
 
