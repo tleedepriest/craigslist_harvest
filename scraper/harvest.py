@@ -1,10 +1,9 @@
 import sys
-import csv
 import glob
 import random
 import requests
 import datetime as dt
-from typing import Union
+from typing import Union, List, Dict
 from pathlib import Path
 from collections import defaultdict
 import pandas as pd
@@ -20,7 +19,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from clean.clean_web_extractions import (
     clean_range_of_posts_on_page,
     clean_date_of_post,
-    clean_gig_posting,)
+    extract_gig_postingbody_from_html,
+    clean_gig_postingbody,
+    extract_dollar_amount,
+    extract_dollar_amount_per_time,
+    extract_time_phrase,
+)
 
 
 def save_gig_links(cl_gigs_page_dir: str) -> None:
@@ -71,8 +75,9 @@ def save_gig_links(cl_gigs_page_dir: str) -> None:
         )
 
         if gig_posts:  # double check page is what we want
-            with (Path(cl_gigs_page_dir)
-                  / f"gig_post_page_{page_count}.html").open("w") as fh:
+            with (Path(cl_gigs_page_dir) / f"gig_post_page_{page_count}.html").open(
+                "w"
+            ) as fh:
 
                 fh.write(page_content)
 
@@ -104,9 +109,7 @@ def save_gig_links(cl_gigs_page_dir: str) -> None:
             on_last_page = True
 
 
-def extract_links_from_gigs_page(path_to_gig_page_html: str,
-                                 header: bool,
-                                 csv_output: str)-> None:
+def extract_links_from_gigs_page(path_to_gig_page_html: str) -> List[Dict[str, str]]:
     """
     Appends to csv file the links from a gigs page. If csv does
     not exist, will create it.
@@ -116,15 +119,13 @@ def extract_links_from_gigs_page(path_to_gig_page_html: str,
             The path to an html file page from the gigs section
             containing links to the individual posts
 
-        header:
-            determines whether or not to write the header of the file
-
-        csv_output:
-            The path to the csv file.
     Returns:
-        None
+        all_gig_posts_for_gig_page:
+            A list of dictionaries representing the extracted links
+            and metadata of all gig posts for a given gig page.
 
     Raises:
+        None
     """
     with open(path_to_gig_page_html, "r") as fh:
         html_content = fh.read()
@@ -132,30 +133,37 @@ def extract_links_from_gigs_page(path_to_gig_page_html: str,
     gig_posts = soup.find_all(
         "li", {"class": "cl-search-result cl-search-view-mode-list"}
     )
-    with Path(csv_output).open('a+', newline='') as fh:
-        fieldnames = ['title', 'link', 'filename',
-                      'date', 'archive_source_path']
-        csv_writer = csv.DictWriter(fh, fieldnames=fieldnames)
-        if header:
-            csv_writer.writeheader()
-        for gig_post in gig_posts:
-            row = defaultdict()
-            a_el = gig_post.find("a")
-            title = a_el.find('span').text
+    all_gig_posts_for_gig_page = []
+    for gig_post in gig_posts:
+        row = defaultdict()
+        a_el = gig_post.find("a")
+
+        if a_el is not None:
             link = a_el["href"]
-            time_el = gig_post.find("time")
+            title = a_el.find("span")
+        else:
+            title = None
+
+        if title is not None:
+            title = title.text
+
+        time_el = gig_post.find("time")
+        if time_el is not None:
             datetime = time_el["datetime"]
-            row['title'] = title
-            row['link'] = link
-            row['filename'] = link.split('/')[-1]
-            row['date'] = clean_date_of_post(datetime)
-            row['archive_source_path'] = path_to_gig_page_html
-            csv_writer.writerow(row)
+            datetime = clean_date_of_post(datetime)
+
+        row["title"] = title
+        row["link"] = link
+        row["filename"] = link.split("/")[-1]  # convienent for later
+        row["date"] = datetime
+        row["archive_source_path"] = path_to_gig_page_html
+
+        all_gig_posts_for_gig_page.append(row)
+
+    return all_gig_posts_for_gig_page
 
 
-def extract_gig_post(filename: str,
-                     link: str,
-                     gig_posts_folder: Path)-> None:
+def extract_gig_post(filename: str, link: str, gig_posts_folder: Path) -> None:
     """
     This downloads an individual gig post from a link into the
     gig_posts_folder
@@ -177,7 +185,7 @@ def extract_gig_post(filename: str,
     try:
         response = requests.get(link)
         if response.status_code == 200:
-            with (gig_posts_folder / filename).open('wb') as fh:
+            with (gig_posts_folder / filename).open("wb") as fh:
                 fh.write(response.content)
         else:
             print(f"Response Status Code: {response.status_code}")
@@ -186,17 +194,8 @@ def extract_gig_post(filename: str,
     except requests.Timeout as e:
         print(str(e))
     except:
-        raise # catch-all
+        raise  # catch-all
 
-
-def analyze_gig_posts():
-    """
-    """
-    gig_postings = pd.read_csv('working_dir/links_to_gig_postings.csv')
-    gig_postings_drop_dupes = gig_postings.copy().drop_duplicates(subset=['title', 'date'])
-    gig_postings_drop_dupes['gig_posting_text'] = gig_postings_drop_dupes['filename'].apply(lambda x: clean_gig_posting(x))
-    print(gig_postings_drop_dupes)
-    gig_postings_drop_dupes.to_csv('final.csv')
 
 if __name__ == "__main__":
-    analyze_gig_posts()
+    pass
