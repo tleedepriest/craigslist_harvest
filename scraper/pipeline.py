@@ -30,6 +30,7 @@ class ScrapeCraigsListGigs(luigi.Task):
     """
 
     date = luigi.DateParameter(default=dt.datetime.today())
+    city = luigi.Parameter()
 
     def requires(self):
         return None
@@ -39,7 +40,7 @@ class ScrapeCraigsListGigs(luigi.Task):
 
     def run(self):
         Path(self.output().path).mkdir(exist_ok=True, parents=True)
-        save_gig_links(self.output().path)
+        save_gig_links(self.output().path, self.city)
 
 
 @requires(ScrapeCraigsListGigs)
@@ -129,7 +130,7 @@ class AnswerQuestion(luigi.Task):
     def run(self):
         transformed_gig_posts = pd.read_csv(self.input().path)
         answer = answer_question(transformed_gig_posts)
-        with open('final.txt', 'w') as fh:
+        with open(self.output().path, 'w') as fh:
             sum_one_total = 0
             sum_two_total = 0
             for date, sum_list in answer.items():
@@ -147,10 +148,12 @@ class RunPipeLine(luigi.WrapperTask):
     """
     Runs the entire pipeline
     """
+    city = luigi.Parameter()
+
     def requires(self):
-        yield ScrapeGigPosts()
-        yield TransformGigPosts()
-        yield AnswerQuestion()
+        yield ScrapeGigPosts(city=self.city)
+        yield TransformGigPosts(city=self.city)
+        yield AnswerQuestion(city=self.city)
 
 if __name__ == "__main__":
     luigi.run()

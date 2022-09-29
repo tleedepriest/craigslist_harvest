@@ -36,7 +36,7 @@ def transform_gig_posts(gig_links_df: pd.DataFrame)-> pd.DataFrame:
     gp_dedupe['hours'] = gp_dedupe['gig_posting_text_clean'].apply(extract_time_phrase)
     return gp_dedupe
 
-def answer_question(transformed_gigs_posts:pd.DataFrame)-> Dict[str, List[int, int, int]]:
+def answer_question(transformed_gigs_posts:pd.DataFrame)-> Dict[str, List[int]]:
     """
     Args:
         transformed_gigs_posts: pd.DataFrame()
