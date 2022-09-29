@@ -1,6 +1,7 @@
 """
 functions to analyze text of individual gig posts.
 """
+from typing import Dict, List
 import pandas as pd
 
 from clean.clean_web_extractions import (
@@ -35,15 +36,16 @@ def transform_gig_posts(gig_links_df: pd.DataFrame)-> pd.DataFrame:
     gp_dedupe['hours'] = gp_dedupe['gig_posting_text_clean'].apply(extract_time_phrase)
     return gp_dedupe
 
-def answer_question(transformed_gigs_posts:pd.DataFrame)-> pd.DataFrame:
+def answer_question(transformed_gigs_posts:pd.DataFrame)-> Dict[str, List[int, int, int]]:
     """
     Args:
         transformed_gigs_posts: pd.DataFrame()
             dataframe containing gig links and html filenames
 
     Returns:
-        : pd.DataFrame()
-            dataframe containing extractions from gig posts
+        answer:
+            answer dict where dates are keys and List is ints.
+            ints are estimate one, estime two, number of gigs
 
     Raises:
     """
